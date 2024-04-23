@@ -5,6 +5,8 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import basic.Counter;
 import basic.CounterWithSynchronization;
+import concurrency.AtomicCounter;
+import concurrency.VoltaileCounter;
 import interthread_communication.Consumer;
 import interthread_communication.NumberClass;
 import interthread_communication.Producer;
@@ -29,7 +31,8 @@ public class App {
         secondThread.start();
         firstThread.join();
         secondThread.join();
-        System.out.println("expected count: 4000, actual count: " + counter.getCount()); // change in counts
+        System.out.println("expected count: 4000, actual count: " +
+                counter.getCount()); // change in counts
 
         // Example to fix the resource access using synchronization on counter object
         // increment method
@@ -54,9 +57,10 @@ public class App {
         syncThread2.join();
 
         // Count Matches
-        System.out.println("Expected Count: 4000, Actual Count: " + counterWithSynchronization.getCount());
+        System.out.println("Expected Count: 4000, Actual Count: " +
+                counterWithSynchronization.getCount());
 
-        // Example for InterThread Commnication using Producer Consumer Problem - wait()
+        // Example for InterThread Commnication using Producer Consumer Problem -wait()
         // & notify()
         // NumberClass numberClass = new NumberClass();
         // new Producer(numberClass);
@@ -89,7 +93,8 @@ public class App {
         lockThread2.join();
 
         // Count matches when a lock is used
-        System.out.println("Expected Count 20000, actual count: " + counter2.getCount());
+        System.out.println("Expected Count 20000, actual count: " +
+                counter2.getCount());
 
         // Example for await() and signal()
         Counter counter3 = new Counter();
@@ -138,11 +143,64 @@ public class App {
             lock.unlock();
         });
 
-        awaitThread.start();
-        signalThread.start();
-        awaitThread.join();
-        signalThread.join();
+        // awaitThread.start();
+        // signalThread.start();
+        // awaitThread.join();
+        // signalThread.join();
 
-        System.out.println("Expected Count 20000, actual count: " + counter3.getCount());
+        System.out.println("Expected Count 20000, actual count: " +
+                counter3.getCount());
+
+        // Example for Thread Safety using Atomic Integer
+
+        AtomicCounter atomicCounter = new AtomicCounter();
+
+        Thread atomicThread1 = new Thread(() -> {
+            for (int i = 0; i < 10000; i++) {
+                atomicCounter.increment();
+            }
+        });
+
+        Thread atomicThread2 = new Thread(() -> {
+            for (int i = 0; i < 10000; i++) {
+                atomicCounter.increment();
+            }
+        });
+        atomicThread1.start();
+        atomicThread2.start();
+
+        atomicThread1.join();
+        atomicThread2.join();
+        // Count matches even without Synchronised - works only for Integer
+        System.out.println("Expected count: 20000, Actual Count: " +
+                atomicCounter.getAtomicInteger());
+
+        // Example for synchronisation using volatile keyword
+
+        VoltaileCounter volatileCounter = new VoltaileCounter();
+
+        Thread volatileThread1 = new Thread(() -> {
+            for (int i = 0; i < 100; i++) {
+                volatileCounter.increment();
+            }
+        });
+
+        Thread volatileThread2 = new Thread(() -> {
+            for (int i = 0; i < 100; i++) {
+                volatileCounter.increment();
+                try {
+                    Thread.sleep(5);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        volatileThread1.start();
+        volatileThread2.start();
+
+        volatileThread1.join();
+        volatileThread2.join();
+        // Count matches with sleep - works only for Integer
+        System.out.println("Expected count: 200, Actual Count: " + volatileCounter.getCount());
     }
 }
