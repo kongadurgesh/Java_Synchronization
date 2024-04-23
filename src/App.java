@@ -1,5 +1,13 @@
+import java.util.Scanner;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
 import basic.Counter;
 import basic.CounterWithSynchronization;
+import interthread_communication.Consumer;
+import interthread_communication.NumberClass;
+import interthread_communication.Producer;
 
 public class App {
     public static void main(String[] args) throws InterruptedException {
@@ -47,5 +55,94 @@ public class App {
 
         // Count Matches
         System.out.println("Expected Count: 4000, Actual Count: " + counterWithSynchronization.getCount());
+
+        // Example for InterThread Commnication using Producer Consumer Problem - wait()
+        // & notify()
+        // NumberClass numberClass = new NumberClass();
+        // new Producer(numberClass);
+        // new Consumer(numberClass);
+
+        // Example for thread locking - alternative to synchronisation
+        Counter counter2 = new Counter();
+        Lock lock = new ReentrantLock();
+
+        Thread lockThread1 = new Thread(new Runnable() {
+            public void run() {
+                for (int i = 0; i < 10000; i++) {
+                    lock.lock();
+                    counter2.increment();
+                    lock.unlock();
+                }
+            }
+        });
+        Thread lockThread2 = new Thread(() -> {
+            for (int i = 0; i < 10000; i++) {
+                lock.lock();
+                counter2.increment();
+                lock.unlock();
+            }
+        });
+
+        lockThread1.start();
+        lockThread2.start();
+        lockThread1.join();
+        lockThread2.join();
+
+        // Count matches when a lock is used
+        System.out.println("Expected Count 20000, actual count: " + counter2.getCount());
+
+        // Example for await() and signal()
+        Counter counter3 = new Counter();
+        Condition condition = lock.newCondition();
+
+        Thread awaitThread = new Thread(new Runnable() {
+            public void run() {
+                lock.lock();
+                System.out.println("Waiting");
+                try {
+                    condition.await();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } finally {
+                    lock.unlock();
+                }
+                System.out.println("Woken Up");
+                for (int i = 0; i < 10000; i++) {
+                    lock.lock();
+                    counter3.increment();
+                    lock.unlock();
+                }
+            }
+        });
+        Thread signalThread = new Thread(() -> {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            lock.lock();
+            System.out.println("Press the enter key..");
+            Scanner scanner = new Scanner(System.in);
+            try {
+                scanner.nextLine();
+            } finally {
+                scanner.close();
+            }
+            System.out.println("Got the Enter Key..");
+            condition.signal();
+            for (int i = 0; i < 10000; i++) {
+                lock.lock();
+                counter3.increment();
+                lock.unlock();
+            }
+            lock.unlock();
+        });
+
+        awaitThread.start();
+        signalThread.start();
+        awaitThread.join();
+        signalThread.join();
+
+        System.out.println("Expected Count 20000, actual count: " + counter3.getCount());
     }
 }
