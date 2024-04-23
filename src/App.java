@@ -1,4 +1,6 @@
 import java.util.Scanner;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -6,6 +8,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import basic.Counter;
 import basic.CounterWithSynchronization;
 import concurrency.AtomicCounter;
+import concurrency.BasicThread;
 import concurrency.VoltaileCounter;
 import interthread_communication.Consumer;
 import interthread_communication.NumberClass;
@@ -202,5 +205,15 @@ public class App {
         volatileThread2.join();
         // Count matches with sleep - works only for Integer
         System.out.println("Expected count: 200, Actual Count: " + volatileCounter.getCount());
+
+        // Example for creating threads using Executor Service - executes threads in
+        // random order
+
+        ExecutorService executorService = Executors.newFixedThreadPool(10);
+        executorService.execute(new BasicThread("Thread 1"));
+        executorService.execute(new BasicThread("Thread 2"));
+        executorService.execute(new BasicThread("Thread 3"));
+
+        executorService.shutdown();
     }
 }
